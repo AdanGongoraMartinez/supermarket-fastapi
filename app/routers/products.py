@@ -16,48 +16,48 @@ SessionDep = Annotated[Session, Depends(get_session)]
 
 
 @router.post("", response_model=ProductPublic, status_code=201)
-def crear_item(item: ProductCreate, session: SessionDep):
-    db_item = Product.model_validate(item)
-    session.add(db_item)
+def crear_producto(product: ProductCreate, session: SessionDep):
+    db_product = Product.model_validate(product)
+    session.add(db_product)
     session.commit()
-    session.refresh(db_item)
-    return db_item
+    session.refresh(db_product)
+    return db_product
 
 
 @router.get("", response_model=list[ProductPublic])
-def listar_products(session: SessionDep):
+def listar_productos(session: SessionDep):
     return session.exec(select(Product)).all()
 
 
-@router.get("/{item_id}", response_model=ProductPublic)
-def leer_item(item_id: int, session: SessionDep):
-    item = session.get(Product, item_id)
-    if not item:
+@router.get("/{product_id}", response_model=ProductPublic)
+def leer_producto(product_id: int, session: SessionDep):
+    product = session.get(Product, product_id)
+    if not product:
         raise HTTPException(status_code=404, detail="Product no encontrado")
 
-    return item
+    return product
 
 
-@router.patch("/{item_id}", response_model=ProductPublic)
-def actualizar_item(item_id: int, datos: ProductUpdate, session: SessionDep):
-    item = session.get(Product, item_id)
-    if not item:
+@router.patch("/{product_id}", response_model=ProductPublic)
+def actualizar_producto(product_id: int, datos: ProductUpdate, session: SessionDep):
+    product = session.get(Product, product_id)
+    if not product:
         raise HTTPException(status_code=404, detail="Product no encontrado")
 
     cambios = datos.model_dump(exclude_unset=True)
-    item.sqlmodel_update(cambios)
+    product.sqlmodel_update(cambios)
 
-    session.add(item)
+    session.add(product)
     session.commit()
-    session.refresh(item)
-    return item
+    session.refresh(product)
+    return product
 
 
-@router.delete("/{item_id}", status_code=204)
-def eliminar_item(item_id: int, session: SessionDep):
-    item = session.get(Product, item_id)
-    if not item:
+@router.delete("/{product_id}", status_code=204)
+def eliminar_producto(product_id: int, session: SessionDep):
+    product = session.get(Product, product_id)
+    if not product:
         raise HTTPException(status_code=404, detail="Product no encontrado")
 
-    session.delete(item)
+    session.delete(product)
     session.commit()
