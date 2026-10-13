@@ -20,7 +20,7 @@ SessionDep = Annotated[Session, Depends(get_session)]
 
 
 @router.post("", response_model=SupermarketPublic, status_code=201)
-def crear_item(item: SupermarketCreate, session: SessionDep):
+def crear_supermarket(item: SupermarketCreate, session: SessionDep):
     db_item = Supermarket.model_validate(item)
     session.add(db_item)
     session.commit()
@@ -29,12 +29,12 @@ def crear_item(item: SupermarketCreate, session: SessionDep):
 
 
 @router.get("", response_model=list[SupermarketPublic])
-def listar_products(session: SessionDep):
+def listar_supermarkets(session: SessionDep):
     return session.exec(select(Supermarket)).all()
 
 
 @router.get("/{item_id}", response_model=SupermarketPublic)
-def leer_item(item_id: int, session: SessionDep):
+def leer_supermarket(item_id: int, session: SessionDep):
     item = session.get(Supermarket, item_id)
     if not item:
         raise HTTPException(status_code=404, detail="Supermarket no encontrado")
@@ -43,7 +43,7 @@ def leer_item(item_id: int, session: SessionDep):
 
 
 @router.patch("/{item_id}", response_model=SupermarketPublic)
-def actualizar_item(item_id: int, datos: SupermarketUpdate, session: SessionDep):
+def actualizar_supermarket(item_id: int, datos: SupermarketUpdate, session: SessionDep):
     item = session.get(Supermarket, item_id)
     if not item:
         raise HTTPException(status_code=404, detail="Supermarket no encontrado")
@@ -58,7 +58,7 @@ def actualizar_item(item_id: int, datos: SupermarketUpdate, session: SessionDep)
 
 
 @router.delete("/{item_id}", status_code=204)
-def eliminar_item(item_id: int, session: SessionDep):
+def eliminar_supermarket(item_id: int, session: SessionDep):
     item = session.get(Supermarket, item_id)
     if not item:
         raise HTTPException(status_code=404, detail="Supermarket no encontrado")
