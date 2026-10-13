@@ -20,12 +20,12 @@ SessionDep = Annotated[Session, Depends(get_session)]
 
 
 @router.post("", response_model=SupermarketPublic, status_code=201)
-def crear_supermarket(item: SupermarketCreate, session: SessionDep):
-    db_item = Supermarket.model_validate(item)
-    session.add(db_item)
+def crear_supermarket(supermarket: SupermarketCreate, session: SessionDep):
+    db_supermarket = Supermarket.model_validate(supermarket)
+    session.add(db_supermarket)
     session.commit()
-    session.refresh(db_item)
-    return db_item
+    session.refresh(db_supermarket)
+    return db_supermarket
 
 
 @router.get("", response_model=list[SupermarketPublic])
@@ -33,35 +33,37 @@ def listar_supermarkets(session: SessionDep):
     return session.exec(select(Supermarket)).all()
 
 
-@router.get("/{item_id}", response_model=SupermarketPublic)
-def leer_supermarket(item_id: int, session: SessionDep):
-    item = session.get(Supermarket, item_id)
-    if not item:
+@router.get("/{supermarket_id}", response_model=SupermarketPublic)
+def leer_supermarket(supermarket_id: int, session: SessionDep):
+    supermarket = session.get(Supermarket, supermarket_id)
+    if not supermarket:
         raise HTTPException(status_code=404, detail="Supermarket no encontrado")
 
-    return item
+    return supermarket
 
 
-@router.patch("/{item_id}", response_model=SupermarketPublic)
-def actualizar_supermarket(item_id: int, datos: SupermarketUpdate, session: SessionDep):
-    item = session.get(Supermarket, item_id)
-    if not item:
+@router.patch("/{supermarket_id}", response_model=SupermarketPublic)
+def actualizar_supermarket(
+    supermarket_id: int, datos: SupermarketUpdate, session: SessionDep
+):
+    supermarket = session.get(Supermarket, supermarket_id)
+    if not supermarket:
         raise HTTPException(status_code=404, detail="Supermarket no encontrado")
 
     cambios = datos.model_dump(exclude_unset=True)
-    item.sqlmodel_update(cambios)
+    supermarket.sqlmodel_update(cambios)
 
-    session.add(item)
+    session.add(supermarket)
     session.commit()
-    session.refresh(item)
-    return item
+    session.refresh(supermarket)
+    return supermarket
 
 
-@router.delete("/{item_id}", status_code=204)
-def eliminar_supermarket(item_id: int, session: SessionDep):
-    item = session.get(Supermarket, item_id)
-    if not item:
+@router.delete("/{supermarket_id}", status_code=204)
+def eliminar_supermarket(supermarket_id: int, session: SessionDep):
+    supermarket = session.get(Supermarket, supermarket_id)
+    if not supermarket:
         raise HTTPException(status_code=404, detail="Supermarket no encontrado")
 
-    session.delete(item)
+    session.delete(supermarket)
     session.commit()
