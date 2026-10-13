@@ -3,6 +3,8 @@ import os
 from dotenv import load_dotenv
 from sqlmodel import Session, SQLModel, create_engine
 
+import app.models  # noqa: F401  (registra todos los modelos en el metadata)
+
 load_dotenv()
 
 engine = create_engine(os.environ["DATABASE_URL"], echo=True)
