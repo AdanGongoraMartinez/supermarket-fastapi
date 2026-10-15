@@ -7,7 +7,11 @@ import app.models  # noqa: F401  (registra todos los modelos en el metadata)
 
 load_dotenv()
 
-engine = create_engine(os.environ["DATABASE_URL"], echo=True)
+# SQL_ECHO=false silencia el log de queries (los tests lo setean antes de importar)
+engine = create_engine(
+    os.environ["DATABASE_URL"],
+    echo=os.environ.get("SQL_ECHO", "true").lower() == "true",
+)
 
 
 def init_db():

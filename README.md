@@ -22,6 +22,7 @@ canasta más barata para una lista de productos.
 | Base de datos     | PostgreSQL 17                 |
 | Driver            | `psycopg` (binary)            |
 | Config            | `python-dotenv`               |
+| Tests             | `pytest` + `TestClient`       |
 | Gestor de entorno | uv                            |
 
 ## Estructura del proyecto
@@ -48,6 +49,12 @@ canasta más barata para una lista de productos.
 │       ├── prices.py
 │       ├── comparer.py
 │       └── items.py
+├── tests/                 # suite de pytest (base de datos propia)
+│   ├── conftest.py        # fixtures, base de test y factories
+│   ├── test_products.py
+│   ├── test_supermarkets.py
+│   ├── test_prices.py
+│   └── test_comparer.py
 ├── docker-compose.yml     # servicio Postgres
 ├── pyproject.toml         # metadatos y dependencias
 └── .env                   # variables de entorno (no versionado)
@@ -77,6 +84,9 @@ DATABASE_URL=postgresql+psycopg://app:cambia_esto@localhost:5432/mi_api
 
 > `DATABASE_URL` debe coincidir con las credenciales de Postgres. El driver es
 > `psycopg` (`postgresql+psycopg://`), no `psycopg2`.
+
+> Opcional: `SQL_ECHO=false` silencia el log de queries SQL del engine. Los tests
+> lo usan para no ensuciar la salida.
 
 ### 2. Levantar la base de datos
 
@@ -186,6 +196,39 @@ curl -X POST http://127.0.0.1:8000/comparer \
   -d '{"product_ids":[1]}'
 ```
 
+## Tests
+
+La suite corre con `pytest` contra una **base de datos exclusiva de test**
+(`supermarket_test`), en la misma instancia de Postgres del compose. Tu base de
+dev nunca se toca: `tests/conftest.py` deriva la URL de test a partir de
+`DATABASE_URL` cambiando solo el nombre de la base, y **aborta si ese nombre no
+termina en `test`** (red de seguridad antes de dropear tablas).
+
+```bash
+uv run pytest                          # corre la suite
+uv run pytest --cov=app                # con cobertura
+uv run pytest tests/test_comparer.py   # un solo archivo
+```
+
+Cómo funciona:
+
+1. Un fixture de sesión crea `supermarket_test` si no existe (`CREATE DATABASE`).
+2. Antes de **cada** test se recrea el esquema (`drop_all` + `create_all`), así
+   que cada test arranca con la base vacía. No se usa rollback con savepoint
+   porque los endpoints hacen `commit()` explícito y ese commit sobrevive.
+3. `client` es el `TestClient` de FastAPI contra la app real (con `lifespan`).
+   Los escenarios se arman con las factories `crear_producto`,
+   `crear_supermarket` y `crear_precio`.
+
+> El `TestClient` de Starlette 1.8 usa **`httpx2`** (la continuación de HTTPX
+> mantenida por Pydantic), no el `httpx` clásico. Por eso está en las
+> dependencias de desarrollo; sin él Starlette emite un
+> `StarletteDeprecationWarning` y cae al `httpx` viejo.
+
+Los endpoints de `items.py` no tienen tests: es el CRUD de ejemplo legado. En
+`prices.py` quedan dos ramas defensivas sin cubrir (la FK garantiza que el
+producto y el supermercado existan).
+
 ## Notas de desarrollo
 
 - **Actualizaciones parciales**: los `PATCH` usan `model_dump(exclude_unset=True)`
@@ -200,7 +243,8 @@ curl -X POST http://127.0.0.1:8000/comparer \
 
 ## Roadmap / ideas para practicar
 
-- [ ] Tests con `pytest` y `TestClient` (y base de datos de prueba).
+- [x] Tests con `pytest` y `TestClient` (y base de datos de prueba).
+- [ ] Tests para el CRUD legado de `/items`.
 - [ ] Migraciones con Alembic.
 - [ ] Búsqueda/filtrado y paginación en las listas.
 - [ ] Categorías de productos (el schema ya menciona `category_id`).
